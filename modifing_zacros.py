@@ -73,7 +73,7 @@ def Adding_Specnum(name_of_list, a_list, index_list):
 
 
 
-def Generate_TPD_List(a_list, ideal_temperature_interval, temperature_interval, temperature, index_list):
+def Generate_TPD_List_from_Row(a_list, ideal_temperature_interval, temperature_interval, temperature, index_list):
     
     linecache.clearcache()   
     # ideal_temperature_interval should be n * temperature_interval
@@ -117,6 +117,39 @@ def Generate_TPD_List(a_list, ideal_temperature_interval, temperature_interval, 
     linecache.clearcache()
     return(temperature_list, all_TPD_list, TPD_list)
         
+def Generate_TPD_List_from_Column(a_list, ideal_temperature_interval, temperature_interval, temperature, index_list):
     
+    linecache.clearcache()   
+    # ideal_temperature_interval should be n * temperature_interval
+    n = ideal_temperature_interval // temperature_interval
+    b_list = [] # 2-D array
+    TPD_list = [] # 2-D array
+    temperature_list = []
+    
+    # 2-D array copy and delete process to create b_list:
+    for i in range(len(a_list)):
+        b_middle_list = [] # 1-D array for copy b_list -> a_list
+        for j in range(len(a_list[i])):
+            b_middle_list.append(a_list[i][j])
+        b_list.append(b_middle_list)
+    for i in range(len(b_list)):
+        for j in range(round(n)):
+            del b_list[i][0]
+    
+    # Average speed is seen as the instantaneous velocity at the midpoint
+    temperature_list.append(ideal_temperature_interval/2+temperature[0])
+    for i in range(len(temperature)-int(n)-1):
+        temperature_list.append(temperature_list[i]+temperature_interval)
+    
+    # b_list[i][j]-a_list[i][j])/n
+    for i in range(len(b_list)):
+        tem_TPD_list = [] # 1-D array
+        for j in range(len(b_list[0])):
+            tem_TPD_list.append((b_list[i][j]-a_list[i][j])/n)
+        if i+1 in index_list:
+            TPD_list.append(tem_TPD_list)
+        
+    linecache.clearcache()
+    return(temperature_list, TPD_list)   
     
     
