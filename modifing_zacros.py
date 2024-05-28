@@ -32,7 +32,7 @@ def Average_Specnum(ads_aver_list, adsorbate, all_tot_steps, all_specnum_result)
 
 
 
-def Adding_Specnum(name_of_list, a_list, index_list):
+def Adding_Specnum_from_Row(name_of_list, a_list, index_list):
     
     linecache.clearcache()
     added_string = ''
@@ -59,9 +59,46 @@ def Adding_Specnum(name_of_list, a_list, index_list):
     # create name of the adding colonmn
     for i in range(len(name_of_list)):
         if i+1 in index_list:
-            added_string = name_of_list[i] + ' + ' + added_string
-    added_string_list.append(added_string[:-2])
+            added_string = added_string + ' + ' + name_of_list[i]
+    added_string_list.append(added_string[3:])
     
+    # create the array of the name list
+    for i in range(len(name_of_list)):
+        if i+1 in index_list:
+            continue
+        added_string_list.append(name_of_list[i])        
+    linecache.clearcache()
+    
+    return(added_string_list,added_list)
+
+
+
+def Adding_Specnum_from_Column(name_of_list, a_list, index_list):
+    
+    linecache.clearcache()
+    added_string = ''
+    added_string_list = []
+    adding_list = [] # 1-D array
+    added_list = [] # 2-D array
+    # calculate the added number for each time/temperature and save in adding_list.    
+    for i in range(len(a_list[0])):
+        add = 0
+        for j in index_list:
+            add = a_list[j-1][i] + add
+        adding_list.append(add)
+    added_list.append(adding_list)
+        
+    # add the element in adding_list first for each time/temperature and add other irrelvent elements.  
+    for i in range(len(a_list)):
+        if i+1 not in index_list:
+            added_list.append(a_list[i])
+            
+    # create name of the adding colonmn
+    for i in range(len(name_of_list)):
+        if i+1 in index_list:
+            added_string = added_string + ' + ' + name_of_list[i]
+    added_string_list.append(added_string[3:])
+
     # create the array of the name list
     for i in range(len(name_of_list)):
         if i+1 in index_list:
