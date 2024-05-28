@@ -18,10 +18,12 @@ def Print_TPD_figure_data(name_of_list,temperature_list,TPD_list):
     plt.show()
         
     with open('TPD_data','w') as ff:
+        ff.write('Temperature               ' + '               '.join(name_of_list) + '\n')
+    with open('TPD_data','a') as ff:
         for i in range(len(temperature_list)):
             print_line = ''
             for j in range(len(TPD_list)):
-                print_line = print_line + '       ' + str(round(TPD_list[j][i],3))
-            ff.write(str(round(temperature_list[i],3)) + '       ' + print_line + '\n')
+                print_line = print_line + '              ' + str(round(TPD_list[j][i],3))
+            ff.write(str(round(temperature_list[i],3)) + print_line + '\n')
             
     linecache.clearcache()
