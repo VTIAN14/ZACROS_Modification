@@ -18,7 +18,7 @@ def Print_TPD_figure_data(name_of_list,temperature_list,TPD_list):
     plt.show()
         
     with open('TPD_data','w') as ff:
-        ff.write('Temperature               ' + '               '.join(name_of_list) + '\n')
+        ff.write('Temp                ' + '               '.join(name_of_list) + '\n')
     with open('TPD_data','a') as ff:
         for i in range(len(temperature_list)):
             print_line = ''
