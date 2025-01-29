@@ -48,9 +48,10 @@ def parse_history_file(input_file, output_file):
                     out_f.write(f"  seed_on_sites {surface_species_name} {sites_str}\n")
                     site_list = []
         out_f.write("end_initial_state\n")
-        
-def process_procstat_file(input_file):
-    with open(input_file, "r") as f:
+
+def plot_bar_chart(input_file1, input_file2, output_file):
+    
+    with open(input_file1, "r") as f: # procstat_output.txt
         lines = f.readlines()
     
     steps = [step.replace("_fwd", "") for step in lines[0].split()[1::2]]  # 提取 Overall 之后的单数索引项
@@ -65,11 +66,20 @@ def process_procstat_file(input_file):
             diff1, diff2 = max(val1 - val2, 0), max(val2 - val1, 0)
             bar_data.append([val1, val2, diff1, diff2])
             bar_labels.append(steps[i // 2])
+    bar_data = np.array(bar_data).T[:, ::-1]
+    bar_labels = bar_labels[::-1]
     
-    return np.array(bar_data).T[:, ::-1], bar_labels[::-1], t  # 反转数据顺序
-
-def plot_bar_chart(input_file, output_file):
-    bar_data, bar_labels, t = process_procstat_file(input_file)
+    with open(input_file2, "r") as f: # mechanism_input.dat
+        steps = []
+        for line in f:
+            # 提取 'reversible_step' 后的字符串
+            if line.strip().startswith("reversible_step"):
+                parts = line.split()
+                if len(parts) > 1:
+                    steps.append(parts[1])
+            if line.strip().startswith('stiffness_scalable_symmetric'):
+                del steps[-1]
+    
     fig, ax = plt.subplots(figsize=(10, 15))
     width, x = 0.6, np.arange(len(bar_labels))
     
@@ -83,13 +93,17 @@ def plot_bar_chart(input_file, output_file):
     ax.set_ylabel("Elementary step")
     ax.set_yticks(x)
     ax.set_yticklabels(bar_labels)
+    for label in ax.get_yticklabels():
+        if label.get_text() in steps:
+            label.set_color("black")
+        else:
+            label.set_color("red")
     ax.set_xscale("log")  # 使用对数坐标轴
     ax.legend()
     ax.grid(True, which="both", linestyle="--", linewidth=0.5)
     
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    plt.show()
-    
+
     
 def generate_nscf_file(input_file1, input_file2, output_file):
 
@@ -107,7 +121,7 @@ def generate_nscf_file(input_file1, input_file2, output_file):
     with open(input_file2, "r") as f:
         for line in f:
             # 提取 'reversible_step' 后的字符串
-            if line.startswith("reversible_step"):
+            if line.strip().startswith("reversible_step"):
                 parts = line.split()
                 if len(parts) > 1:
                     steps.append(parts[1])
