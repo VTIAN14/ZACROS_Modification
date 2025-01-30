@@ -89,6 +89,12 @@ def plot_bar_chart(input_file1, input_file2, output_file):
     ax.barh(x - 1.5 * width / 4, bar_data[3], width / 4, label="Net (-)", color='orange')    
     ax.axvline(1 / t, color='black', linestyle='--', linewidth=1)
     
+    ax.barh(x + 1.5 * width / 4, bar_data[0], width / 4, label="Forward", color='blue')
+    ax.barh(x + 0.5 * width / 4, bar_data[1], width / 4, label="Reverse", color='red')
+    ax.barh(x - 0.5 * width / 4, bar_data[2], width / 4, label="Net (+)", color='green')
+    ax.barh(x - 1.5 * width / 4, bar_data[3], width / 4, label="Net (-)", color='orange')    
+    ax.axvline(1 / t, color='black', linestyle='-', linewidth=1, label="1/t")
+    
     ax.set_xlabel("Event frequency / s⁻¹")
     ax.set_ylabel("Elementary step")
     ax.set_yticks(x)
@@ -100,11 +106,11 @@ def plot_bar_chart(input_file1, input_file2, output_file):
             label.set_color("red")
     ax.set_xscale("log")  # 使用对数坐标轴
     ax.legend()
-    ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-    
+    #ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+    ax.grid(True, which="major", linestyle="--", linewidth=1.2, color="gray", alpha=1.0)  # 主要网格线加粗
+    ax.grid(True, which="minor", linestyle="--", linewidth=0.5, color="gray", alpha=0.7)  # 次要网格线细一点
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
 
-    
 def generate_nscf_file(input_file1, input_file2, output_file):
 
     # 初始化列表
@@ -138,7 +144,7 @@ def generate_nscf_file(input_file1, input_file2, output_file):
     # 确保 steps 和 pscf 长度一致
     if len(steps) != len(pscf):
         raise ValueError("Mismatch between steps and pscf lengths.")
-    
+
     steps.insert(0, 'max_steps')
     pscf.insert(0, maxsteps)
 
@@ -148,7 +154,7 @@ def generate_nscf_file(input_file1, input_file2, output_file):
             if step == 'max_steps':
                 f.write(f"{step:<30} {int(value):<10} {'default'}\n")
             else:
-                f.write(f"{step:<30} {value:.2e}   {'1.00e-00'}\n")
+                f.write(f"{step:<30} {value:.2e}   {'1.00e-0'}\n")
 
     # 提示完成
     print(f"Output file '{output_file}' created successfully.")
@@ -189,7 +195,7 @@ def modify_mechanism_file(input_file1, input_file2, output_file):
                         line += " "
                     line += part
                 line+= '\n'
-              
+           
         # for lines have keyword "Stiff_Scaling"
         if "# Stiff Scaling =" in line:
             scf_match = re.findall(r"-?\d+(?:\.\d+)?(?:e[+-]?\d+)?", line)
@@ -199,26 +205,26 @@ def modify_mechanism_file(input_file1, input_file2, output_file):
                 nscf_muti_scf = nscf * scf
                 line = '  ' + line.strip() + f" {nscf_muti_scf:.2e}\n"        
             nscf_index += 1
-                     
+                  
         modified_lines.append(line)
 
     with open(output_file, "w") as f:
         f.writelines(modified_lines)
-        
+   
 def modify_simulation_file(input_file1, input_file2, input_file3, output_file):
-    
+   
     with open(input_file1, "r") as f:
         first_line = next(f).strip()  # 读取第一行
         maxsteps = first_line.split()[-1]  # 获取第一行的最后一个值
-    
+  
     with open(input_file2, "r") as f:
         lines = f.readlines()
     config_index = next(i for i in range(len(lines) - 1, -1, -1) if "configuration" in lines[i])
     t = float(lines[config_index].split()[3])# 记录第一行第一列的科学计数法数字
-    
+
     with open(input_file3, "r") as f:
         lines = f.readlines()
-
+        
     with open(output_file, "w") as f:
         for line in lines:
             if line.strip().startswith("temperature"):
@@ -227,26 +233,26 @@ def modify_simulation_file(input_file1, input_file2, input_file3, output_file):
                     # Modify the third column value
                     parts[2] = str(float(parts[2]) + t * float(parts[3]))
                 line = "     ".join(parts) + "\n"
-                
+
             if line.strip().startswith("max_steps"):
                 parts = line.split()
                 parts[1] = maxsteps if maxsteps != "default" else parts[1]
                 line = "     ".join(parts) + "\n"
-                
+
             f.write(line)
 
 def copy_and_rename_files(input_file):
-    
+
     with open(input_file, "r") as f:
         lines = f.readlines()
         for line in lines:
             if line.strip().startswith("temperature"):
                 parts = line.split()
                 t = f"{float(parts[2]):.16e}"
-    
+
     # 当前目录
     current_dir = os.getcwd()
-    
+
     # 创建目标目录
     parent_dir = os.path.dirname(current_dir)
     target_dir = os.path.join(parent_dir, f"{t}")
