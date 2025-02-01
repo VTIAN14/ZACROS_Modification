@@ -10,12 +10,12 @@ def perform_stiffness_downscaling(input_file1, input_file2, input_file3):
    
     if not os.path.exists(input_file1):
         with open(input_file1, "w") as f:
-            f.write(" ")
-        print(f"{input_file1} has been created")
+            f.write("\n")
+        print(f"{input_file1} has been created.")
     else:
         with open(input_file1, "a") as f:
-            f.write(" ")
-            
+            f.write("\n")
+
     #legacy
     maxallowedfastquasiequisepar = -1
     stiffnscalingthreshold = -1
@@ -315,8 +315,9 @@ def perform_stiffness_downscaling(input_file1, input_file2, input_file3):
         if lega_fastest_eq_number / lega_lowest_eq_number > maxallowedfastquasiequisepar: # case(0.0)
             # print('lega_case0.0')
             for i in range(nsteps):
-                lega_nscf[i] = pscf[i] * lega_lowest_eq_number / step_fwd_number[i]
-                lega_nscf[i] = lega_nscf[i] if lega_nscf[i] < stiffnscalingthreshold else 1.0
+                if step_fwd_number[i] != 0:
+                    lega_nscf[i] = pscf[i] * lega_lowest_eq_number / step_fwd_number[i]
+                    lega_nscf[i] = lega_nscf[i] if lega_nscf[i] < stiffnscalingthreshold else 1.0
         else: # case(0.1)
             # print('lega_case0.1')
             for i in range(nsteps):
