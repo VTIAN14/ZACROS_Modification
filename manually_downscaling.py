@@ -10,7 +10,7 @@ def perform_stiffness_downscaling(input_file1, input_file2, input_file3):
    
     if not os.path.exists(input_file1):
         with open(input_file1, "w") as f:
-            f.write("")
+            f.write(" ")
         print(f"{input_file1} has been created")
         
     #legacy
@@ -136,7 +136,7 @@ def perform_stiffness_downscaling(input_file1, input_file2, input_file3):
         line.strip()
         for line in lines:
             parts = line.split()
-            if len(parts) == 2:  # 只写入不包含该文本的行
+            if len(parts) == 2:
                 f.write(line)
                 
     with open(input_file2, "r") as f: # mechanism_input.dat, not support for irreversible steps at the moment
