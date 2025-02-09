@@ -92,6 +92,13 @@ class surface_info:
         angle = math.degrees(theta)
         
         return angle
+
+def perform_graph_isomorphism(surface_info_obj, species_info_obj):
+
+    species_info.recursive_small()
+    result_subgraph = recursive_big(surface_info_obj, species_info_obj)
+
+    return result_subgraph
         
 def recursive_big(surface_info_obj, species_info_obj, result_subgraph=None, dont_search=None, dont_search2=None, pre=None, y=0, i=1):
     # 目的：遍历第 y 行的第 j (1-L) 个 site 是否符合要求 i (从1开始)
