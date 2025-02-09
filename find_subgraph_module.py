@@ -93,9 +93,17 @@ class surface_info:
         
         return angle
         
-def recursive_big(surface_info_obj, species_info_obj, result_subgraph, dont_search, dont_search2, pre, y, i): 
+def recursive_big(surface_info_obj, species_info_obj, result_subgraph=None, dont_search=None, dont_search2=None, pre=None, y=0, i=1):
     # 目的：遍历第 y 行的第 j (1-L) 个 site 是否符合要求 i (从1开始)
     # print('start', dont_search, dont_search2, pre, y, i)
+    if result_subgraph == None:
+        result_subgraph = []
+    if dont_search == None:
+        dont_search =  [[] for _ in range(len(species_info_obj.result_interaction)//2)]
+    if dont_search2 == None:
+        dont_search2 = []
+    if pre == None:
+        pre = []
 
     if pre != []:
         pre_index = species_info_obj.result_interaction.index(species_info_obj.result_interaction[2*i-2])
@@ -108,7 +116,7 @@ def recursive_big(surface_info_obj, species_info_obj, result_subgraph, dont_sear
     for j in range(surface_info_obj.big_adj_matrix.shape[0]):  # 逐个检测site j
         index_in_subgraph = species_info_obj.result_interaction[2*i-1]-1
         # 找到大表中一个符合要求的connection
-        if surface_info_obj.big_adj_matrix[y][j] == 1 and surface_info_obj.site_type_big[j] == species_info_obj.site_type_small[index_in_subgraph]: 
+        if surface_info_obj.big_adj_matrix[y][j] == 1 and surface_info_obj.site_type[j] == species_info_obj.site_type[index_in_subgraph]:
 
             # 判断对应 site 上所成的角度与要求是不是一致
             angle_criteria = True
@@ -119,7 +127,7 @@ def recursive_big(surface_info_obj, species_info_obj, result_subgraph, dont_sear
                     for l in range(3):
                         if len(pre_tem) > species_info_obj.result_interaction.index(species_info_obj.angle_list[k][l+1]):
                             # 完成建立 lattice_angle_site 和 angle_list 之间的映射
-                            lattice_angle_site[k][l] = pre_tem[species_info_obj.result_interaction.index(species_info_obj.angle_list[k][l+1])] 
+                            lattice_angle_site[k][l] = pre_tem[species_info_obj.result_interaction.index(species_info_obj.angle_list[k][l+1])]
                 for k in range(len(species_info_obj.angle_list)):
                     if all(x > 0 for x in lattice_angle_site[k]):
                         angle = surface_info_obj.angle_ABC(lattice_angle_site[k][0], lattice_angle_site[k][1], lattice_angle_site[k][2])
@@ -165,7 +173,7 @@ def recursive_big(surface_info_obj, species_info_obj, result_subgraph, dont_sear
                                 pre.append(y)
                                 pre.append(j)
                                 # 这里“要求”被符合，开始判断下一要求（迭代）,注意因为不涉及新site,这行没有搜完
-                                return recursive_big(surface_info_obj, species_info_obj, result_subgraph, dont_search, dont_search2, pre, y, i+1) 
+                                return recursive_big(surface_info_obj, species_info_obj, result_subgraph, dont_search, dont_search2, pre, y, i+1)
 
                     else: # “要求” 涉及新 site， 第一次一定在这个分支中
                         if j not in pre: # 新找到的 j 必须不能和原来找到的任何 big_site index 一致
@@ -183,7 +191,7 @@ def recursive_big(surface_info_obj, species_info_obj, result_subgraph, dont_sear
                                 pre.append(y)
                                 pre.append(j)
                                 # 符合“要求” 才有继续查询是否满足其他要求的必要，这里要求被符合，进入迭代，搜下一行
-                                return recursive_big(surface_info_obj, species_info_obj, result_subgraph, dont_search, dont_search2, pre, j, i+1) 
+                                return recursive_big(surface_info_obj, species_info_obj, result_subgraph, dont_search, dont_search2, pre, j, i+1)
     
     # 此时已查询过所有j，但没有一个符合要求，需要退回上一步,继续搜索符合上一个要求的下一组yj
     # print('preif',i)
