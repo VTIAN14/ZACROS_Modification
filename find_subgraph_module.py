@@ -141,28 +141,20 @@ def recursive_big(surface_info_obj, species_info_obj, result_subgraph=None, dont
                         if angle-1 > species_info_obj.angle_list[k][0] or species_info_obj.angle_list[k][0] > angle+1: # 角度不对
                             angle_criteria = False
 
-            # 判断对应 site 上的 adsorbate 和该 adsorbate 的 dentate number 是不是一致
+            # 判断对应 site 上的 adsorbate 和 lattice 上的 adsorbate 与该 adsorbate 的 dentate number 是不是一致
             if angle_criteria == True:
-                adsorbate_criteria = False
-                name_single_ads_small = ''
-                dentate_single_ads_small = -1
-                name_single_ads_big = ''
-                dentate_single_ads_big = -1
-                if j not in pre:
-                    for k in range(len(species_info_obj.adsorbate_list_small)):
-                        if index_in_subgraph in species_info_obj.adsorbate_list_small[k]:
-                            name_single_ads_small = species_info_obj.adsorbate_list_small[k][0]
-                            dentate_single_ads_small = species_info_obj.adsorbate_list_small[k].index(index_in_subgraph)
-                            break
-                    for k in range(len(surface_info_obj.adsorbate_list_big)):
-                        if j in species_info_obj.adsorbate_list_small[k]:
-                            name_single_ads_big = surface_info_obj.adsorbate_list_big[k][0]
-                            dentate_single_ads_big = surface_info_obj.adsorbate_list_big[k].index(j)
-                            break
-                    if name_single_ads_small == name_single_ads_big and dentate_single_ads_small == dentate_single_ads_big:
-                        adsorbate_criteria = True
-                else:
-                    adsorbate_criteria = True
+                pre_tem = pre + [y,j]
+                lattice_adsorbate_type = [[-1] * (species_info_obj.adsorbate_list[k] - 1) for k in range(len(species_info_obj.adsorbate_list))]
+                for k in range(len(species_info_obj.adsorbate_list)): # 对于每个adsorbate的条件
+                    for l in range(len(lattice_adsorbate_type[k])): # 一个条件中的每个dendate 
+                        if len(pre_tem) > species_info_obj.result_interaction.index(species_info_obj.adsorbate_list[k][l+1]):
+                            # 完成建立 lattice_adsorbate_site 和 adsorbate_list 之间的映射
+                            lattice_adsorbate_type[k][l] = pre_tem[species_info_obj.result_interaction.index(species_info_obj.adsorbate_list[k][l+1])]
+                    lattice_adsorbate_type[k].insert(0,species_info_obj.adsorbate_list[k][0]) # 补上 每个adsorbate_list_small 的名字
+                for k in range(len(species_info_obj.adsorbate_list)):
+                    if all(x > 0 for x in lattice_adsorbate_type[k][1:]):
+                        if lattice_adsorbate_type[k] not in surface_info_obj.adsorbate_list:
+                            adsorbate_criteria = False
 
             if adsorbate_criteria == True:
                 if ((not dont_search[i-1]) or all([y,j] != sublist for sublist in dont_search[i-1])) and j not in dont_search2:
