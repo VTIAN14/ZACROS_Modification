@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import math
 
 class cluster_info:
@@ -239,8 +240,11 @@ def find_subgraph(surface_info_obj, cluster_info_obj, result_subgraph=None, dont
     return find_subgraph(surface_info_obj, cluster_info_obj, result_subgraph, dont_search, dont_search2, pre, pre[-1], i-1)
 
 def perform_graph_isomorphism(surface_info_obj, cluster_info_obj):
-
-    cluster_info_obj.recursive_small()
+    
+    if cluster_info_obj.inter_initialise == False:
+        cluster_info_obj.recursive_small()
     result_subgraph = find_subgraph(surface_info_obj, cluster_info_obj)
+    random_choose = random.choice(result_subgraph[1:])
+    result_subgraph_after_choose = result_subgraph[0] + random_choose
 
-    return result_subgraph
+    return result_subgraph_after_choose
