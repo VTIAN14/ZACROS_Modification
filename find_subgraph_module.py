@@ -240,7 +240,7 @@ def find_subgraph(surface_info_obj, cluster_info_obj, result_subgraph=None, dont
 
 def perform_graph_isomorphism(surface_info_obj, cluster_info_obj):
 
-    cluster_info.recursive_small()
+    cluster_info_obj.recursive_small()
     result_subgraph = find_subgraph(surface_info_obj, cluster_info_obj)
 
     return result_subgraph
