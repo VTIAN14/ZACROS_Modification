@@ -2,6 +2,8 @@ import numpy as np
 import random
 import math
 
+# cluster_info_list: save all "cluster_info"
+
 class cluster_info:
     def __init__(self, small_adj_matrix, inter_initialise, result_interaction, site_type, angle_list, adsorbate_list, cluster_energy):
         self.small_adj_matrix = small_adj_matrix
@@ -11,8 +13,8 @@ class cluster_info:
         self.angle_list = angle_list
         self.adsorbate_list = adsorbate_list
         self.cluster_energy = cluster_energy
-                
-    def recursive_small(self, list_interaction=None, y_traj=None, y=0):
+
+    def find_interaction(self, list_interaction=None, y_traj=None, y=0):
         if list_interaction is None:
             list_interaction = []
         if y_traj is None:
@@ -32,7 +34,7 @@ class cluster_info:
                         self.initialise = True
                         return self.result_interaction, self.inter_initialise
                     else:
-                        return self.recursive_small(list_interaction, y_traj, i) # 换行搜索
+                        return self.find_interaction(list_interaction, y_traj, i) # 换行搜索
                 else:  # 找到和原来某site 之间的关系（要求）了，只记录，继续在这行找
                 # elif i != list_interaction[-2]: # 找到和原来某site 之间的关系（要求）了，只记录，继续在这行找
                     list_interaction.append(y)
@@ -44,7 +46,7 @@ class cluster_info:
                         # print('else', list_interaction)
                         self.initialise = True
                         return self.result_interaction, self.inter_initialise
-        
+
         # 此时已查询过所有i，但没有一个符合要求，需要退回上一步
         # print('no match')
         if y_traj != []: 
@@ -54,17 +56,17 @@ class cluster_info:
             self.initialise = True
             return self.result_interaction, self.inter_initialise
         del y_traj[-1:] # 回到 y 的前一次
-        return self.recursive_small(list_interaction, y_traj, y_new)
-        
+        return self.find_interaction(list_interaction, y_traj, y_new)
+
 class surface_info:
-    def __init__(self, big_adj_matrix, coordinate_list, site_type, adsorbate_list, lattice_energy, energy_initialise):
+    def __init__(self, big_adj_matrix, coordinate_list, site_type, adsorbate_list, energy_initialise, lattice_energy):
         self.big_adj_matrix = big_adj_matrix
         self.coordinate_list = coordinate_list
         self.site_type = site_type
         self.adsorbate_list = adsorbate_list
-        self.lattice_energy = lattice_energy
         self.energy_initialise = False
-    
+        self.lattice_energy = lattice_energy
+
     def angle_ABC(self, a, b, c):
         # 提取坐标
         x1, y1 = self.coordinate_list[a]
@@ -92,12 +94,12 @@ class surface_info:
         # 计算角度（防止浮点数误差导致 cos 超过 [-1,1]）
         cos_theta = max(-1, min(1, cos_theta))
         theta = math.acos(cos_theta)  # 反余弦（弧度）
-        
+
         # 转换为度
         angle = math.degrees(theta)
-        
+
         return angle
-    
+
     def update_surface(self, cluster_info_obj, result_subgraph_after_choose): # update adsorbate_list
         if len(result_subgraph_after_choose[0]) == 0:
             return 0
@@ -121,7 +123,72 @@ class surface_info:
                         break
         self.energy_initialise = False
         return self.adsorbate_list, self.energy_initialise
-        
+
+    def update_overall_energy(self, cluster_info_list):
+        self.lattice_energy = 0
+        for i in range(len(cluster_info_list)):
+            result_subgraph = find_subgraph(self, cluster_info_list[i])
+            self.lattice_energy += (len(result_subgraph)-1) * cluster_info_list[i].cluster_energy
+        self.energy_initialise = True
+        return self.lattice_energy, self.energy_initialise
+
+class reaction_info:
+    def __init__(self, small_adj_matrix, inter_initialise, result_interaction, site_type, angle_list, adsorbate_list_ini, adsorbate_list_fin, energy_barrier, pre_exp_fwd, pre_exp_rev):
+        self.small_adj_matrix = small_adj_matrix
+        self.inter_initialise = False
+        self.result_interaction = []
+        self.site_type = site_type
+        self.angle_list = angle_list
+        self.adsorbate_list_ini = adsorbate_list_ini
+        self.adsorbate_list_fin = adsorbate_list_fin
+        self.energy_barrier = energy_barrier
+        self.pre_exp_fwd = pre_exp_fwd
+        self.pre_exp_rev = pre_exp_rev
+
+    def find_interaction(self, list_interaction=None, y_traj=None, y=0):
+        if list_interaction is None:
+            list_interaction = []
+        if y_traj is None:
+            y_traj = []
+        for i in range(self.small_adj_matrix.shape[0]):  # 逐个检测site i
+            # print(i)
+            if self.small_adj_matrix[y][i] == 1: # 找到大表中一个connection, 第一次一定成功
+                if i not in list_interaction: # 第一次出现site i
+                    y_traj.append(y)
+                    list_interaction.append(y)
+                    list_interaction.append(i)
+                    self.small_adj_matrix[y][i] = 0
+                    self.small_adj_matrix[i][y] = 0
+                    # print(list_interaction)
+                    if np.sum(self.small_adj_matrix) == 0:
+                        self.result_interaction = [0, 1] + [x + 1 for x in list_interaction]
+                        self.initialise = True
+                        return self.result_interaction, self.inter_initialise
+                    else:
+                        return self.find_interaction(list_interaction, y_traj, i) # 换行搜索
+                else:  # 找到和原来某site 之间的关系（要求）了，只记录，继续在这行找
+                # elif i != list_interaction[-2]: # 找到和原来某site 之间的关系（要求）了，只记录，继续在这行找
+                    list_interaction.append(y)
+                    list_interaction.append(i)
+                    self.small_adj_matrix[y][i] = 0
+                    self.small_adj_matrix[i][y] = 0
+                    if np.sum(self.small_adj_matrix) == 0:
+                        self.result_interaction = [0, 1] + [x + 1 for x in list_interaction]
+                        # print('else', list_interaction)
+                        self.initialise = True
+                        return self.result_interaction, self.inter_initialise
+
+        # 此时已查询过所有i，但没有一个符合要求，需要退回上一步
+        # print('no match')
+        if y_traj != []: 
+            y_new = y_traj[-1]
+        else: # monodentate
+            self.result_interaction = [0,1]
+            self.initialise = True
+            return self.result_interaction, self.inter_initialise
+        del y_traj[-1:] # 回到 y 的前一次
+        return self.find_interaction(list_interaction, y_traj, y_new)
+
 def find_subgraph(surface_info_obj, cluster_info_obj, result_subgraph=None, dont_search=None, dont_search2=None, pre=None, y=0, i=1):
     # 目的：遍历第 y 行的第 j (1-L) 个 site 是否符合要求 i (从1开始)
     # print('start', dont_search, dont_search2, pre, y, i)
@@ -213,7 +280,7 @@ def find_subgraph(surface_info_obj, cluster_info_obj, result_subgraph=None, dont
                                 pre.append(j)
                                 # 符合“要求” 才有继续查询是否满足其他要求的必要，这里要求被符合，进入迭代，搜下一行
                                 return find_subgraph(surface_info_obj, cluster_info_obj, result_subgraph, dont_search, dont_search2, pre, j, i+1)
-    
+
     # 此时已查询过所有j，但没有一个符合要求，需要退回上一步,继续搜索符合上一个要求的下一组yj
     # print('preif',i)
     if i == 1: # 再也搜不到一个了
@@ -239,10 +306,10 @@ def find_subgraph(surface_info_obj, cluster_info_obj, result_subgraph=None, dont
         return find_subgraph(surface_info_obj, cluster_info_obj, result_subgraph, dont_search, dont_search2, pre, 0, i-1)
     return find_subgraph(surface_info_obj, cluster_info_obj, result_subgraph, dont_search, dont_search2, pre, pre[-1], i-1)
 
-def perform_graph_isomorphism(surface_info_obj, cluster_info_obj):
-    
+def choose_graph_isomorphism(surface_info_obj, cluster_info_obj):
+
     if cluster_info_obj.inter_initialise == False:
-        cluster_info_obj.recursive_small()
+        cluster_info_obj.find_interaction()
     result_subgraph = find_subgraph(surface_info_obj, cluster_info_obj)
     random_choose = random.choice(result_subgraph[1:])
     result_subgraph_after_choose = result_subgraph[0] + random_choose
