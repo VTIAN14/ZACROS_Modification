@@ -3,6 +3,7 @@ import random
 import math
 
 # cluster_info_list: save all "cluster_info"
+# reaction_info_list: save all "reaction_info"
 
 class cluster_info:
     def __init__(self, adj_matrix, inter_initialise, result_interaction, site_type, angle_list, adsorbate_list, cluster_energy):
@@ -126,7 +127,8 @@ class surface_info:
         return self.lattice_energy, self.energy_initialise
 
 class reaction_info:
-    def __init__(self, adj_matrix, inter_initialise, result_interaction, site_type, angle_list, adsorbate_list, adsorbate_list_ini, adsorbate_list_fin, energy_barrier_fwd, energy_barrier_rev, pre_exp_fwd, pre_exp_rev, prox):
+    def __init__(self, adj_matrix, inter_initialise, result_interaction, site_type, angle_list, adsorbate_list, \
+                 adsorbate_list_ini, adsorbate_list_fin, energy_barrier_fwd, energy_barrier_rev, pre_exp_fwd, pre_exp_rev, prox):
         self.adj_matrix = adj_matrix
         self.inter_initialise = False
         self.result_interaction = []
@@ -184,6 +186,12 @@ class reaction_info:
             return self.result_interaction, self.inter_initialise
         del y_traj[-1:] # 回到 y 的前一次
         return self.find_interaction(list_interaction, y_traj, y_new)
+    
+    def angle_ABC(self, a, b, c):
+        for angle, x, y, z in self.angle_list:
+            if (a, b, c) == (x, y, z) or (c, b, a) == (x, y, z):
+                return angle  # 直接返回找到的角度
+        return -1  # 如果未找到，返回 -1
 
     def generate_random_time(self, cluster_info_list, overall_energy_ini, overall_energy_fin, T):
         self.adsorbate_list = self.adsorbate_list_ini
@@ -242,8 +250,8 @@ def find_subgraph(parent_info_obj, boy_info_obj, result_subgraph=None, dont_sear
                 for k in range(len(boy_info_obj.angle_list)):
                     if all(x > 0 for x in lattice_angle_site[k]):
                         angle = parent_info_obj.angle_ABC(lattice_angle_site[k][0], lattice_angle_site[k][1], lattice_angle_site[k][2])
-                        if angle-1 > boy_info_obj.angle_list[k][0] or boy_info_obj.angle_list[k][0] > angle+1: # 角度不对
-                            angle_criteria = False
+                        if angle-1 > boy_info_obj.angle_list[k][0] or boy_info_obj.angle_list[k][0] > angle+1 or angle == -1: # 角度不对
+                            angle_criteria = False                        
 
             # 判断对应 site 上的 adsorbate 和 lattice 上的 adsorbate 与该 adsorbate 的 dentate number 是不是一致
             if angle_criteria == True:
