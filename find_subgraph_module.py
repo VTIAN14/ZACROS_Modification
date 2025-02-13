@@ -127,14 +127,15 @@ class surface_info:
         return self.lattice_energy, self.energy_initialise
 
 class reaction_info:
-    def __init__(self, adj_matrix, inter_initialise, result_interaction, site_type, angle_list, adsorbate_list, \
+    def __init__(self, adj_matrix, inter_initialise, result_interaction, site_type, angle_list, switch_adsorbate_list, adsorbate_list, \
                  adsorbate_list_ini, adsorbate_list_fin, energy_barrier_fwd, energy_barrier_rev, pre_exp_fwd, pre_exp_rev, prox):
         self.adj_matrix = adj_matrix
         self.inter_initialise = False
         self.result_interaction = []
         self.site_type = site_type
         self.angle_list = angle_list
-        self.adsorbate_list = adsorbate_list
+        self.switch_adsorbate_list = 'ini'
+        self.adsorbate_list = adsorbate_list_ini
         self.adsorbate_list_ini = adsorbate_list_ini
         self.adsorbate_list_fin = adsorbate_list_fin
         self.energy_barrier_fwd = energy_barrier_fwd
@@ -192,6 +193,14 @@ class reaction_info:
             if (a, b, c) == (x, y, z) or (c, b, a) == (x, y, z):
                 return angle  # 直接返回找到的角度
         return -1  # 如果未找到，返回 -1
+    
+    def switch_adsorbate_list(self):
+        if self.switch_adsorbate_list == 'ini':
+            self.adsorbate_list = self.adsorbate_list_fin
+            self.switch_adsorbate_list == 'fin'
+        elif self.switch_adsorbate_list == 'fin':
+            self.adsorbate_list = self.adsorbate_list_ini
+            self.switch_adsorbate_list == 'ini'
 
     def generate_random_time(self, cluster_info_list, overall_energy_ini, overall_energy_fin, T):
         self.adsorbate_list = self.adsorbate_list_ini
@@ -315,7 +324,7 @@ def find_subgraph(parent_info_obj, boy_info_obj, result_subgraph=None, dont_sear
             result_subgraph.append(boy_info_obj.result_interaction[1:])
         else:
             result_subgraph.append(boy_info_obj.result_interaction[2:])
-        return result_subgraph
+        return result_subgraph # [[63, 69], [35, 106], [1, 2]]
     # print(dont_search[0])
     # print(dont_search2)
     # print(pre)
@@ -334,7 +343,7 @@ def choose_graph_isomorphism(parent_info_obj, boy_info_obj):
     if boy_info_obj.inter_initialise == False:
         boy_info_obj.find_interaction()
     result_subgraph = find_subgraph(parent_info_obj, boy_info_obj)
-    random_choose = random.choice(result_subgraph[1:])
-    result_subgraph_after_choose = result_subgraph[0] + random_choose
+    random_choose = random.choice(result_subgraph[:-1])
+    result_subgraph_after_choose = random_choose + result_subgraph[-1]
 
     return result_subgraph_after_choose
